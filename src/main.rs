@@ -1,10 +1,13 @@
 mod orbits;
 mod utils;
 use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, RED, YELLOW}, glamx::{Quat, Vec3}, renderer::Polyline3d, scene::SceneNode3d, window::Window};
-use orbits::{Planet, Orbit, Sattelite, Epoch};
-use std::{f64::consts::PI, path::Path};
+use orbits::{Planet, Orbit};
+use std::{f64::consts::{PI, TAU}, path::Path};
+use glam::{DAffine3, DVec3};
 
-const SCALE: f32 = 1e6;
+use crate::utils::VecDVec3Ext;
+
+const SCALE: f64 = 1e6;
 
 #[kiss3d::main]
 async fn main() {
@@ -14,25 +17,31 @@ async fn main() {
         radius: 6.371e6,
     };
 
-    let group1_orbit = Orbit::new(
+    const NUM_ORBITS: u32 = 12;
+
+    let orbits: Vec<Orbit> = (0..NUM_ORBITS).map(|i| Orbit::new(
         &earth, 
-        200000.0, // 200km
-        80000000.0, // 8000km
-        PI/2.0, 
+        1000000.0, // 1000km
+        1000000.0, // 1000km
+        3.0 * PI/8.0, 
+        TAU * i as f64 / NUM_ORBITS as f64,
         0.0,
-        0.0,
-    );
+    )).collect();
 
-    let sat1 = Sattelite {
-        orbit: group1_orbit,
-        epoch: Epoch::new(0.0, 0.0)
-    };
+    const ORBIT_SAMPLES: u32 = 100;
 
-    let points = sat1.orbit.params.generate_points(100);
-    println!("{:#?}", points);
-    // println!("{:#?}", sat1);
-    // println!("{:#?}", sat1.orbit.params.affine_from_ucirc());
+    let elipses: Vec<Polyline3d> = orbits.iter().map(|orbit| -> Polyline3d {
+            let mut verts = orbit.params
+                        .generate_points(ORBIT_SAMPLES)
+                        .transform(DAffine3::from_scale(DVec3::splat(1.0 / SCALE)))
+                        .to_f32();
+            verts.push(verts[0]);
 
+            Polyline3d::new(verts)
+                .with_color(YELLOW)
+                .with_width(0.5)
+                .with_perspective(false)
+        }).collect();
 
     // Plot
     let mut window = Window::new("Orbit shape").await;
@@ -44,8 +53,7 @@ async fn main() {
     camera.set_up_axis(Vec3::Z);
     let mut scene = SceneNode3d::empty();
 
-    let mut earth_3d = scene
-        .add_sphere(earth.radius as f32 / SCALE)
+    scene.add_sphere((earth.radius / SCALE) as f32)
         .set_texture_from_file(Path::new("assets/2k_earth_daymap.jpg"), "earth")
         // kiss3d's sphere has its poles on Y, with the image's top row (north) at -Y.
         // Rotating -90° about X sends -Y to +Z, so north points up the Z axis.
@@ -59,25 +67,15 @@ async fn main() {
         (Vec3::Z, BLUE),
     ];
 
-    let mut verts: Vec<Vec3> = points
-        .iter()
-        .map(|p| Vec3::new(p.x as f32 / SCALE, p.y as f32 / SCALE, p.z as f32 / SCALE))
-        .collect();
-    verts.push(verts[0]); // close the loop (replaces the wrap-around branch)
-
-
-    let orbit_elipse = Polyline3d::new(verts)
-        .with_color(YELLOW)
-        .with_width(0.5)
-        .with_perspective(false);
-
     while window.render_3d(&mut scene, &mut camera).await {
         // Lines only last one frame, so redraw every frame.
         for (dir, color) in axes {
             window.draw_line(-dir * axis_len, dir * axis_len, color, 0.5, false);
         }
 
-        window.draw_polyline(&orbit_elipse);
+        for orbit_elipse in &elipses {
+            window.draw_polyline(&orbit_elipse);
+        }
     }
     
 }
