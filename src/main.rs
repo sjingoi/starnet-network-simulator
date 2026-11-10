@@ -1,6 +1,6 @@
 mod orbits;
 mod utils;
-use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, RED, YELLOW}, glamx::{Quat, Vec3}, scene::SceneNode3d, window::Window};
+use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, RED, YELLOW}, glamx::{Quat, Vec3}, renderer::Polyline3d, scene::SceneNode3d, window::Window};
 use orbits::{Planet, Orbit, Sattelite, Epoch};
 use std::{f64::consts::PI, path::Path};
 
@@ -59,26 +59,25 @@ async fn main() {
         (Vec3::Z, BLUE),
     ];
 
+    let mut verts: Vec<Vec3> = points
+        .iter()
+        .map(|p| Vec3::new(p.x as f32 / SCALE, p.y as f32 / SCALE, p.z as f32 / SCALE))
+        .collect();
+    verts.push(verts[0]); // close the loop (replaces the wrap-around branch)
+
+
+    let orbit_elipse = Polyline3d::new(verts)
+        .with_color(YELLOW)
+        .with_width(0.5)
+        .with_perspective(false);
+
     while window.render_3d(&mut scene, &mut camera).await {
         // Lines only last one frame, so redraw every frame.
         for (dir, color) in axes {
             window.draw_line(-dir * axis_len, dir * axis_len, color, 0.5, false);
         }
 
-        for i in 0..points.len() {
-            let p_start = points.get(i).unwrap();
-            let p_end = if i + 1 < points.len() {
-                points.get(i + 1).unwrap()
-            } else {
-                points.get(0).unwrap()
-            };
-
-            // `perspective: false` keeps the width a constant 2px regardless of distance.
-            // Build kiss3d's Vec3 by hand: our glam version differs from kiss3d's.
-            let p_start = Vec3::new(p_start.x as f32 / SCALE, p_start.y as f32 / SCALE, p_start.z as f32 / SCALE);
-            let p_end = Vec3::new(p_end.x as f32 / SCALE, p_end.y as f32 / SCALE, p_end.z as f32 / SCALE);
-            window.draw_line(p_start, p_end, YELLOW, 0.5, false);
-        }
+        window.draw_polyline(&orbit_elipse);
     }
     
 }
