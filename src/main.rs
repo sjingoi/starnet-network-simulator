@@ -59,6 +59,14 @@ impl VecDVec3Ext for Vec<DVec3> {
     }
 }
 
+fn sample_u_circ(n: u32) -> Vec<DVec3> {
+    (0..n).map(|i| -> DVec3 {
+            let angle = i as f64 * TAU / n as f64;
+            let (s, c) = angle.sin_cos();
+            DVec3::new(s, c, 0.0)
+    }).collect()
+}
+
 #[derive(Debug)]
 struct OrbitParams {
     semi_maj_axis: f64, // Half of the elipse's major axis diameter
@@ -71,6 +79,30 @@ struct OrbitParams {
 impl OrbitParams {
     fn semi_min_axis(&self) -> f64 {
         self.semi_maj_axis * (1.0 - self.eccentricity.powi(2)).sqrt()
+    }
+
+    fn affine_from_ucirc(&self) -> DAffine3 {
+        // let peri = self.semi_maj_axis * (1.0 - self.eccentricity);
+        let scale_t = DAffine3::from_scale(glam::DVec3 {
+            x: self.semi_maj_axis,
+            y: self.semi_min_axis(),
+            z: 0.0
+        });
+        let trans_t = DAffine3::from_translation(glam::DVec3 {
+            x: self.semi_maj_axis * self.eccentricity,
+            y: 0.0,
+            z: 0.0
+        });
+        let rot_arg_peri = DAffine3::from_rotation_z(self.arg_periapsis);
+        let rot_incl = DAffine3::from_rotation_x(self.inclincation);
+        let rot_asc_node = DAffine3::from_rotation_z(self.asc_node_lon);
+
+        rot_asc_node * rot_incl * rot_arg_peri * trans_t * scale_t
+    }
+
+    fn generate_points(&self, n: u32) -> Vec<DVec3> {
+        let affine = self.affine_from_ucirc();
+        sample_u_circ(n).transform(affine)
     }
 }
 
