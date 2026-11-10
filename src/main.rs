@@ -18,6 +18,27 @@ struct Orbit<'a> {
     parent: &'a Planet,
     params: OrbitParams,
 }
+
+impl<'a> Orbit<'a> {
+    fn new(parent: &'a Planet, pe_alt: f64, ap_alt: f64, inclination: f64, asc_node_lon: f64, arg_periapsis: f64) -> Orbit<'a> {
+        let periapsis = pe_alt + parent.radius;
+        let apoapsis = ap_alt + parent.radius;
+        let semi_maj_axis = (periapsis + apoapsis) / 2.0;
+        let eccentricity = 1.0 - periapsis / semi_maj_axis;
+
+        Orbit { 
+            parent: parent,
+            params: OrbitParams {
+                semi_maj_axis: semi_maj_axis,
+                eccentricity: eccentricity,
+                inclincation: inclination,
+                asc_node_lon: asc_node_lon,
+                arg_periapsis: arg_periapsis
+            },
+        }
+    }
+}
+
 #[derive(Debug)]
 struct Epoch {
     mean_anomaly: f64, // Position in orbit
