@@ -1,6 +1,5 @@
 use std::{f64::consts::PI, f64::consts::TAU};
-
-
+use glam::{DAffine3, DVec3};
 
 trait FloatExt {
     fn ecc_anomaly(self, orbit: &OrbitParams) -> Self;
@@ -43,6 +42,20 @@ impl FloatExt for f64 {
         let (s, c) = (m / 2.0).sin_cos();
 
         2.0 * ((1.0 + e).sqrt() * s).atan2((1.0 - e).sqrt() * c)   
+    }
+}
+
+trait VecDVec3Ext {
+    fn transform(self, transform: DAffine3) -> Self;
+}
+
+impl VecDVec3Ext for Vec<DVec3> {
+    fn transform(mut self, affine: DAffine3) -> Self {
+        for p in &mut self {
+            *p = affine.transform_point3(*p);
+        }
+
+        self
     }
 }
 
