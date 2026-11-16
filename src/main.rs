@@ -22,22 +22,26 @@ async fn main() {
         radius: 6.371e6,
     };
 
-    const NUM_ORBITS: u32 = 1;
+    const NUM_GROUPS: u32 = 16;
+    const NUM_SATS_PER_GROUP: u32 = 16;
 
-    let orbits: Vec<Orbit> = (0..NUM_ORBITS).map(|i| Orbit::new(
+    let orbits: Vec<Orbit> = (0..NUM_GROUPS).map(|i| Orbit::new(
         &earth, 
         1000000.0, // 1000km
         1000000.0, // 1000km
-        1.0 * PI/8.0, 
-        // TAU * i as f64 / NUM_ORBITS as f64,
-        0.0,
+        2.0 * PI/8.0, 
+        TAU * i as f64 / NUM_GROUPS as f64,
         0.0,
     )).collect();
 
-    let sat: Sattelite = Sattelite { 
-        orbit: orbits.get(0).expect("No orbits"),
-        epoch: Epoch::new(0.0, 0.0)
-    };
+    let groups: Vec<Vec<Sattelite>> = orbits.iter().map(|orbit| {
+        (0..NUM_SATS_PER_GROUP).map(|i| -> Sattelite {
+            Sattelite {
+                orbit,
+                epoch: Epoch::new(i as f64 / NUM_SATS_PER_GROUP as f64, 0.0) 
+            }
+        }).collect()
+    }).collect();
 
     const ORBIT_SAMPLES: u32 = 100;
 
@@ -78,9 +82,6 @@ async fn main() {
         (Vec3::Z, BLUE),
     ];
 
-
-    let sat_pos = sat.position(60.0) / SCALE;
-
     while window.render_3d(&mut scene, &mut camera).await {
         // Lines only last one frame, so redraw every frame.
         for (dir, color) in axes {
@@ -93,8 +94,12 @@ async fn main() {
 
         window.draw_point(Vec3 { x: (1.2e7 / SCALE) as f32, y: 0.0, z: 0.0 }, RED, 8.0);
 
-
-        window.draw_point(Vec3::new(sat_pos.x as f32, sat_pos.y as f32, sat_pos.z as f32), YELLOW, 8.0);
+        for group in &groups {
+            for sat in group {
+                let sat_pos = sat.position(400.0) / SCALE;
+                window.draw_point(Vec3::new(sat_pos.x as f32, sat_pos.y as f32, sat_pos.z as f32), YELLOW, 8.0);
+            }
+        }
     }
     
 }

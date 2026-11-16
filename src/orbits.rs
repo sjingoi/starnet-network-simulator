@@ -1,5 +1,5 @@
-use std::{cell::OnceCell, f64::consts::{PI, TAU}, sync::Once};
-use crate::utils::{Ray2D, VecDVec3Ext, DVec2Ext, sample_u_circ};
+use std::{cell::OnceCell, f64::consts::{PI, TAU}};
+use crate::utils::{VecDVec3Ext, sample_u_circ};
 use glam::{DAffine2, DAffine3, DVec2, DVec3};
 
 const G: f64 = 6.67430e-11;
@@ -79,7 +79,7 @@ impl OrbitParams {
                 z: 0.0
             });
             let trans_t = DAffine3::from_translation(glam::DVec3 {
-                x: self.semi_maj_axis * self.eccentricity,
+                x: -1.0 * self.semi_maj_axis * self.eccentricity,
                 y: 0.0,
                 z: 0.0
             });
@@ -111,7 +111,8 @@ impl OrbitParams {
         *self.affine_2d_to_3d.get_or_init(|| {
             let rot_incl = DAffine3::from_rotation_x(self.inclincation);
             let rot_asc_node = DAffine3::from_rotation_z(self.asc_node_lon);
-            rot_incl * rot_asc_node
+
+            rot_asc_node * rot_incl
         })
     }
 
@@ -120,30 +121,22 @@ impl OrbitParams {
         sample_u_circ(n).transform(affine)
     }
 
-    fn ray_intersect_2d(&self, ray: Ray2D) -> Option<DVec2> {
-        let ray_t = ray
-            .transform(self.affine_2d_from_ucirc().inverse());
-        let lambda = ray_t
-            .ucirc_intersect();
-
-        lambda.map(|l| ray.at(l))
-    }
-
     pub fn position(&self, mean_anomaly: f64) -> DVec3 {
-        let true_anomaly = mean_anomaly
-            .ecc_anomaly(self)
-            .true_anomoly(self);
-        let ray = Ray2D::new(
-            DVec2::new(self.semi_maj_axis * self.eccentricity, 0.0),
-            DVec2::from_angle(true_anomaly)
+        let ecc = self.eccentricity;
+        let true_anomaly = mean_anomaly.ecc_anomaly(self).true_anomoly(self);
+        let (s, c) = true_anomaly.sin_cos();
+        let radius = self.semi_maj_axis * (1.0 - ecc.powi(2)) / (1.0 + ecc * c);
+
+        let point_relative = DVec3::new(
+            radius * c,
+            radius * s,
+            0.0
         );
-        let orbit_point = self
-            .ray_intersect_2d(ray)
-            .expect("Could not find intersect")
-            .to_3d();
+
+        let point_plane = DAffine3::from_rotation_z(self.arg_periapsis)
+            .transform_point3(point_relative);
         
-        self.affine_2d_to_3d()
-            .transform_point3(orbit_point)
+        self.affine_2d_to_3d().transform_point3(point_plane)
     }
 }
 
@@ -211,8 +204,12 @@ pub struct Sattelite<'a> {
 
 impl<'a> Sattelite<'a> {
     pub fn position(&self, time_sec: f64) -> DVec3 {
-        let period = self.orbit.period();
-        let mean_anomaly_pos = time_sec % period / period * TAU; // Position in orbital period relative to epoch
+        let sec_per_orbit: f64 = self.orbit.period();
+        let time_since_epoch_sec = time_sec - self.epoch.time_0;
+        let orbits = time_since_epoch_sec / sec_per_orbit;
+        let dist_since_epoch_rad = orbits * TAU;
+        let dist_since_t0_rad = dist_since_epoch_rad + self.epoch.mean_anomaly;
+        let mean_anomaly_pos = dist_since_t0_rad % TAU;
         self.orbit.params.position(mean_anomaly_pos)
     }
 }
