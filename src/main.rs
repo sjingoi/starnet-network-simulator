@@ -2,12 +2,13 @@ mod orbits;
 mod utils;
 use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, GREY, RED, YELLOW}, glamx::{Quat, Vec3}, renderer::Polyline3d, scene::SceneNode3d, window::Window};
 use orbits::{Planet, Orbit};
-use std::{f64::consts::{PI, TAU}, path::Path};
+use std::{f64::consts::{PI, TAU}, path::Path, time::{SystemTime, UNIX_EPOCH}};
 use glam::{DAffine3, DVec3};
 
 use crate::{orbits::{Epoch, Sattelite}, utils::VecDVec3Ext};
 
 const SCALE: f64 = 1e6;
+const TIME_SCALE: f64 = 1.0;
 
 // fn sim(satellites: Vec<Sattelite>, sim_time_sec: f64) -> Vec<Vec3> {
 //     satellites.iter().map(|sat| -> Vec3 {
@@ -22,23 +23,26 @@ async fn main() {
         radius: 6.371e6,
     };
 
-    const NUM_GROUPS: u32 = 16;
-    const NUM_SATS_PER_GROUP: u32 = 16;
+    const NUM_GROUPS: u32 = 32;
+    const NUM_SATS_PER_GROUP: u32 = 64;
 
     let orbits: Vec<Orbit> = (0..NUM_GROUPS).map(|i| Orbit::new(
         &earth, 
-        1000000.0, // 1000km
-        1000000.0, // 1000km
-        2.0 * PI/8.0, 
+        400000.0, // 400km
+        400000.0, // 400km
+        53.25 * PI/180.0, 
         TAU * i as f64 / NUM_GROUPS as f64,
         0.0,
     )).collect();
 
-    let groups: Vec<Vec<Sattelite>> = orbits.iter().map(|orbit| {
+    let groups: Vec<Vec<Sattelite>> = orbits.iter().enumerate().map(|(group_i, orbit)| {
         (0..NUM_SATS_PER_GROUP).map(|i| -> Sattelite {
             Sattelite {
                 orbit,
-                epoch: Epoch::new(i as f64 / NUM_SATS_PER_GROUP as f64, 0.0) 
+                epoch: Epoch::new(
+                    i as f64 / NUM_SATS_PER_GROUP as f64,
+                    orbit.period() * TAU * group_i as f64 / (NUM_SATS_PER_GROUP ^ 2) as f64
+                ) 
             }
         }).collect()
     }).collect();
@@ -82,6 +86,9 @@ async fn main() {
         (Vec3::Z, BLUE),
     ];
 
+    let mut time_elapsed: f64 = 0.0;
+    let mut ref_time = SystemTime::now();
+
     while window.render_3d(&mut scene, &mut camera).await {
         // Lines only last one frame, so redraw every frame.
         for (dir, color) in axes {
@@ -96,10 +103,19 @@ async fn main() {
 
         for group in &groups {
             for sat in group {
-                let sat_pos = sat.position(400.0) / SCALE;
-                window.draw_point(Vec3::new(sat_pos.x as f32, sat_pos.y as f32, sat_pos.z as f32), YELLOW, 8.0);
+                let sat_pos = sat.position(time_elapsed) / SCALE;
+                window.draw_point(Vec3::new(sat_pos.x as f32, sat_pos.y as f32, sat_pos.z as f32), YELLOW, 6.0);
             }
         }
+
+        let time_now = SystemTime::now();
+        let time_delta = time_now
+            .duration_since(ref_time)
+            .expect("Could not get time")
+            .as_secs_f64();
+
+        time_elapsed +=  TIME_SCALE * time_delta;
+        ref_time = time_now;
     }
     
 }
