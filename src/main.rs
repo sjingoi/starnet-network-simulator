@@ -1,13 +1,18 @@
 mod orbits;
 mod utils;
-use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, RED, YELLOW}, glamx::{Quat, Vec3}, renderer::Polyline3d, scene::SceneNode3d, window::Window};
+use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, GREY, RED, YELLOW}, glamx::{Quat, Vec3}, renderer::Polyline3d, scene::SceneNode3d, window::Window};
 use orbits::{Planet, Orbit};
 use std::{f64::consts::{PI, TAU}, path::Path};
 use glam::{DAffine3, DVec3};
 
-use crate::utils::VecDVec3Ext;
+use crate::{orbits::{Epoch, Sattelite}, utils::VecDVec3Ext};
 
 const SCALE: f64 = 1e6;
+
+// fn sim(satellites: Vec<Sattelite>, sim_time_sec: f64) -> Vec<Vec3> {
+//     satellites.iter().map(|sat| -> Vec3 {
+//     }).collect()
+// } 
 
 #[kiss3d::main]
 async fn main() {
@@ -17,16 +22,22 @@ async fn main() {
         radius: 6.371e6,
     };
 
-    const NUM_ORBITS: u32 = 12;
+    const NUM_ORBITS: u32 = 1;
 
     let orbits: Vec<Orbit> = (0..NUM_ORBITS).map(|i| Orbit::new(
         &earth, 
         1000000.0, // 1000km
         1000000.0, // 1000km
-        3.0 * PI/8.0, 
-        TAU * i as f64 / NUM_ORBITS as f64,
+        1.0 * PI/8.0, 
+        // TAU * i as f64 / NUM_ORBITS as f64,
+        0.0,
         0.0,
     )).collect();
+
+    let sat: Sattelite = Sattelite { 
+        orbit: orbits.get(0).expect("No orbits"),
+        epoch: Epoch::new(0.0, 0.0)
+    };
 
     const ORBIT_SAMPLES: u32 = 100;
 
@@ -67,6 +78,9 @@ async fn main() {
         (Vec3::Z, BLUE),
     ];
 
+
+    let sat_pos = sat.position(60.0) / SCALE;
+
     while window.render_3d(&mut scene, &mut camera).await {
         // Lines only last one frame, so redraw every frame.
         for (dir, color) in axes {
@@ -76,6 +90,11 @@ async fn main() {
         for orbit_elipse in &elipses {
             window.draw_polyline(&orbit_elipse);
         }
+
+        window.draw_point(Vec3 { x: (1.2e7 / SCALE) as f32, y: 0.0, z: 0.0 }, RED, 8.0);
+
+
+        window.draw_point(Vec3::new(sat_pos.x as f32, sat_pos.y as f32, sat_pos.z as f32), YELLOW, 8.0);
     }
     
 }
