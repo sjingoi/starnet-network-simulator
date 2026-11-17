@@ -1,19 +1,14 @@
 mod orbits;
 mod utils;
-use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, GREY, RED, YELLOW}, glamx::{Quat, Vec3}, renderer::Polyline3d, scene::SceneNode3d, window::Window};
+use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, RED, YELLOW}, glamx::{Quat, Vec3}, renderer::Polyline3d, scene::SceneNode3d, window::Window};
 use orbits::{Planet, Orbit};
-use std::{f64::consts::{PI, TAU}, path::Path, time::{SystemTime, UNIX_EPOCH}};
+use std::{f64::consts::{PI, TAU}, path::Path, time::{SystemTime}};
 use glam::{DAffine3, DVec3};
 
 use crate::{orbits::{Epoch, Sattelite}, utils::VecDVec3Ext};
 
 const SCALE: f64 = 1e7;
 const TIME_SCALE: f64 = 1.0;
-
-// fn sim(satellites: Vec<Sattelite>, sim_time_sec: f64) -> Vec<Vec3> {
-//     satellites.iter().map(|sat| -> Vec3 {
-//     }).collect()
-// } 
 
 #[kiss3d::main]
 async fn main() {

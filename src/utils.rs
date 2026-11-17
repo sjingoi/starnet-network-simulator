@@ -1,17 +1,7 @@
 use std::f64::consts::TAU;
 
-use glam::{DAffine2, DAffine3, DVec2, DVec3};
+use glam::{DAffine3, DVec3};
 use kiss3d::glamx::Vec3;
-
-pub trait DVec2Ext {
-    fn to_3d(self) -> DVec3;
-}
-
-impl DVec2Ext for DVec2 {
-    fn to_3d(self) -> DVec3 {
-        DVec3::new(self.x, self.y, 0.0)
-    }
-}
 
 pub trait VecDVec3Ext {
     fn transform(self, transform: DAffine3) -> Self;

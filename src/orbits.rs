@@ -1,6 +1,6 @@
 use std::{cell::OnceCell, f64::consts::{PI, TAU}};
 use crate::utils::{VecDVec3Ext, sample_u_circ};
-use glam::{DAffine2, DAffine3, DVec2, DVec3};
+use glam::{DAffine3, DVec3};
 
 const G: f64 = 6.67430e-11;
 
@@ -60,7 +60,6 @@ pub struct OrbitParams {
     asc_node_lon: f64, // Longitue of the asending node (latitude where orbit crosses equator going up)
 
     // Memoized calculations
-    affine_2d: OnceCell<DAffine2>,
     affine_3d: OnceCell<DAffine3>,
     affine_2d_to_3d: OnceCell<DAffine3>,
 }
@@ -89,22 +88,6 @@ impl OrbitParams {
     
             rot_asc_node * rot_incl * rot_arg_peri * trans_t * scale_t
         })
-    }
-
-    fn affine_2d_from_ucirc(&self) -> DAffine2 {
-        *self.affine_2d.get_or_init(|| {
-            let scale_t = DAffine2::from_scale(glam::DVec2 { 
-                x: self.semi_maj_axis, 
-                y: self.semi_min_axis() 
-            });
-            let trans_t = DAffine2::from_translation(glam::DVec2 { 
-                x: self.semi_maj_axis * self.eccentricity, 
-                y: 0.0 
-            });
-            let rot_t = DAffine2::from_angle(self.arg_periapsis);
-            
-            rot_t * scale_t * trans_t
-        }) 
     }
 
     fn affine_2d_to_3d(&self) -> DAffine3 {
@@ -170,7 +153,6 @@ impl<'a> Orbit<'a> {
                 inclincation: inclination,
                 asc_node_lon: asc_node_lon,
 
-                affine_2d: OnceCell::new(),
                 affine_3d: OnceCell::new(), 
                 affine_2d_to_3d: OnceCell::new()
             },
