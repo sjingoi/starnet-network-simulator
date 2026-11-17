@@ -142,8 +142,9 @@ impl OrbitParams {
 
 #[derive(Debug)]
 pub struct Planet {
-    pub mass: f64,
-    pub radius: f64,
+    pub mass: f64, // Mass in kg
+    pub radius: f64, // Radius in metres
+    pub sr_day: f64, // Sidereal day length in seconds
 }
 
 #[derive(Debug)]
