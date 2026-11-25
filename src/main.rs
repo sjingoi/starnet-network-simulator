@@ -2,7 +2,7 @@ mod constellation;
 mod orbits;
 mod topology;
 mod utils;
-use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, RED, YELLOW}, glamx::{Quat, Vec3}, renderer::Polyline3d, scene::SceneNode3d, window::Window};
+use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, LIME_GREEN, RED, YELLOW}, glamx::{Quat, Vec3}, renderer::Polyline3d, scene::SceneNode3d, window::Window};
 use orbits::{Planet, Orbit};
 use std::{f64::consts::{PI, TAU}, path::Path, time::{SystemTime}};
 use glam::{DAffine3, DVec3};
@@ -12,7 +12,7 @@ use crate::{constellation::{Constellation, SatelliteGroup, SatelliteId, Sattelit
 const SCALE: f64 = 1e7;
 const TIME_SCALE: f64 = 1.0;
 const MAX_RANGE_METRES: f64 = 700_000.0;
-const MIN_RANGE_METRES: f64 = 10_000.0;
+const MIN_RANGE_METRES: f64 = 400_000.0;
 const TOPOLOGY_INTERVAL_SEC: f64 = 10.0;
 
 #[kiss3d::main]
@@ -112,6 +112,18 @@ async fn main() {
 
         for orbit_elipse in &elipses {
             window.draw_polyline(&orbit_elipse);
+        }
+
+        for (start, end) in topology.links(&constellation, time_elapsed) {
+            let start = start / SCALE;
+            let end = end / SCALE;
+            window.draw_line(
+                Vec3::new(start.x as f32, start.y as f32, start.z as f32),
+                Vec3::new(end.x as f32, end.y as f32, end.z as f32),
+                LIME_GREEN,
+                1.5,
+                false,
+            );
         }
 
         window.draw_point(Vec3 { x: (1.2e7 / SCALE) as f32, y: 0.0, z: 0.0 }, RED, 8.0);
