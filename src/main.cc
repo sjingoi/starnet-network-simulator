@@ -1,11 +1,7 @@
-#include <ns3/attribute.h>
+#include <ns3/applications-module.h>
 #include <ns3/core-module.h>
-#include <ns3/csma-helper.h>
-#include <ns3/net-device-container.h>
-#include <ns3/network-module.h>
-#include <ns3/point-to-point-module.h>
-#include <ns3/string.h>
 #include <ns3/internet-module.h>
+#include <ns3/network-module.h>
 #include <ns3/csma-module.h>
 #include <ns3/internet-apps-module.h>
 
@@ -32,7 +28,7 @@ int main() {
     PingHelper ping = PingHelper(interfaces.GetAddress(1));
     ping.SetAttribute("Count", UintegerValue(6));
     ping.SetAttribute("Interval", TimeValue(Seconds(1)));
-
+    
     ApplicationContainer app = ping.Install(nodes.Get(0));
     app.Start(Seconds(1.0));
     app.Stop(Seconds(20.0));

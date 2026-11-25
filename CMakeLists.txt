@@ -12,6 +12,7 @@ find_package(ns3 CONFIG REQUIRED COMPONENTS
     point-to-point
     csma
     applications
+    internet-apps
 )
 
 add_executable(sim src/main.cc)
@@ -23,4 +24,5 @@ target_link_libraries(sim PRIVATE
     ns3::point-to-point
     ns3::csma
     ns3::applications
+    ns3::internet-apps
 )
