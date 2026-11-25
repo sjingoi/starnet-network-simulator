@@ -18,8 +18,12 @@ impl Topology {
         let satellites: Vec<(SatelliteId, DVec3)> = constellation
             .groups
             .iter()
-            .flat_map(|group| &group.satellites)
-            .map(|satellite| (satellite.id, satellite.position(time)))
+            .flat_map(|group| {
+                group
+                    .satellites
+                    .iter()
+                    .map(move |satellite| (satellite.id, satellite.position(&group.orbit, time)))
+            })
             .collect();
         let mut neighbors: HashMap<SatelliteId, Vec<SatelliteId>> =
             satellites.iter().map(|(id, _)| (*id, Vec::new())).collect();
@@ -44,8 +48,11 @@ impl Topology {
         let positions: HashMap<_, _> = constellation
             .groups
             .iter()
-            .flat_map(|group| &group.satellites)
-            .map(|satellite| (satellite.id, satellite.position(time_sec)))
+            .flat_map(|group| {
+                group.satellites.iter().map(move |satellite| {
+                    (satellite.id, satellite.position(&group.orbit, time_sec))
+                })
+            })
             .collect();
 
         let mut lines = Vec::new();

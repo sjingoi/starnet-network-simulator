@@ -2,12 +2,10 @@ mod constellation;
 mod orbits;
 mod topology;
 mod utils;
-use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, LIME_GREEN, RED, YELLOW}, glamx::{Quat, Vec3}, renderer::Polyline3d, scene::SceneNode3d, window::Window};
-use orbits::{Planet, Orbit};
+use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, LIME_GREEN, RED, YELLOW}, glamx::{Quat, Vec3}, scene::SceneNode3d, window::Window};
 use std::{f64::consts::{PI, TAU}, path::Path, time::{SystemTime}};
-use glam::{DAffine3, DVec3};
 
-use crate::{constellation::{Constellation, SatelliteGroup, SatelliteId, Sattelite}, orbits::Epoch, utils::VecDVec3Ext};
+use crate::{constellation::Constellation, orbits::Planet};
 
 const SCALE: f64 = 1e7;
 const TIME_SCALE: f64 = 1.0;
@@ -24,49 +22,8 @@ async fn main() {
         sr_day: 8.6164091e4,
     };
 
-    const NUM_GROUPS: u32 = 32;
-    const NUM_SATS_PER_GROUP: u32 = 64;
-
-    let orbits: Vec<Orbit> = (0..NUM_GROUPS).map(|i| Orbit::new(
-        &earth, 
-        400000.0, // 400km
-        400000.0, // 400km
-        53.25 * PI/180.0, 
-        TAU * i as f64 / NUM_GROUPS as f64,
-        0.0,
-    )).collect();
-
-    let constellation = Constellation { groups: orbits.iter().enumerate().map(|(group_i, orbit)| {
-        let satellites = (0..NUM_SATS_PER_GROUP).map(|i| -> Sattelite {
-            Sattelite {
-                id: SatelliteId {
-                    group: group_i as u8,
-                    index: i as u8,
-                },
-                orbit,
-                epoch: Epoch::new(
-                    i as f64 / NUM_SATS_PER_GROUP as f64,
-                    orbit.period() * TAU * group_i as f64 / (NUM_SATS_PER_GROUP.pow(2)) as f64
-                ) 
-            }
-        }).collect();
-        SatelliteGroup { satellites }
-    }).collect() };
-
-    const ORBIT_SAMPLES: u32 = 100;
-
-    let elipses: Vec<Polyline3d> = orbits.iter().map(|orbit| -> Polyline3d {
-            let mut verts = orbit.params
-                        .generate_points(ORBIT_SAMPLES)
-                        .transform(DAffine3::from_scale(DVec3::splat(1.0 / SCALE)))
-                        .to_f32();
-            verts.push(verts[0]);
-
-            Polyline3d::new(verts)
-                .with_color(YELLOW)
-                .with_width(0.5)
-                .with_perspective(false)
-        }).collect();
+    let constellation = Constellation::new(&earth, 32, 64);
+    let ellipses = constellation.render_ellipses(SCALE);
 
     // Plot
     let mut window = Window::new("Orbit shape").await;
@@ -110,8 +67,8 @@ async fn main() {
             window.draw_line(-dir * axis_len, dir * axis_len, color, 0.5, false);
         }
 
-        for orbit_elipse in &elipses {
-            window.draw_polyline(&orbit_elipse);
+        for ellipse in &ellipses {
+            window.draw_polyline(ellipse);
         }
 
         for (start, end) in topology.links(&constellation, time_elapsed) {
@@ -130,7 +87,7 @@ async fn main() {
 
         for group in &constellation.groups {
             for sat in &group.satellites {
-                let sat_pos = sat.position(time_elapsed) / SCALE;
+                let sat_pos = sat.position(&group.orbit, time_elapsed) / SCALE;
                 window.draw_point(Vec3::new(sat_pos.x as f32, sat_pos.y as f32, sat_pos.z as f32), YELLOW, 4.0);
             }
         }
