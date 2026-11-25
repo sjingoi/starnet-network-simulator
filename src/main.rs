@@ -5,7 +5,7 @@ use orbits::{Planet, Orbit};
 use std::{f64::consts::{PI, TAU}, path::Path, time::{SystemTime}};
 use glam::{DAffine3, DVec3};
 
-use crate::{orbits::{Epoch, Sattelite}, utils::VecDVec3Ext};
+use crate::{orbits::{Epoch, SatelliteId, Sattelite}, utils::VecDVec3Ext};
 
 const SCALE: f64 = 1e7;
 const TIME_SCALE: f64 = 1.0;
@@ -34,6 +34,10 @@ async fn main() {
     let groups: Vec<Vec<Sattelite>> = orbits.iter().enumerate().map(|(group_i, orbit)| {
         (0..NUM_SATS_PER_GROUP).map(|i| -> Sattelite {
             Sattelite {
+                id: SatelliteId {
+                    group: group_i as u8,
+                    index: i as u8,
+                },
                 orbit,
                 epoch: Epoch::new(
                     i as f64 / NUM_SATS_PER_GROUP as f64,

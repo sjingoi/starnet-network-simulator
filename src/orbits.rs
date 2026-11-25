@@ -179,8 +179,15 @@ impl Epoch {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SatelliteId {
+    pub group: u8,
+    pub index: u8,
+}
+
 #[derive(Debug)]
 pub struct Sattelite<'a> {
+    pub id: SatelliteId,
     pub orbit: &'a Orbit<'a>,
     pub epoch: Epoch
 }
