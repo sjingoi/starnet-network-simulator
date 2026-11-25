@@ -1,3 +1,4 @@
+mod constellation;
 mod orbits;
 mod topology;
 mod utils;
@@ -6,7 +7,7 @@ use orbits::{Planet, Orbit};
 use std::{f64::consts::{PI, TAU}, path::Path, time::{SystemTime}};
 use glam::{DAffine3, DVec3};
 
-use crate::{orbits::{Epoch, SatelliteId, Sattelite}, topology::Topology, utils::VecDVec3Ext};
+use crate::{constellation::{Constellation, SatelliteGroup, SatelliteId, Sattelite}, orbits::Epoch, utils::VecDVec3Ext};
 
 const SCALE: f64 = 1e7;
 const TIME_SCALE: f64 = 1.0;
@@ -35,8 +36,8 @@ async fn main() {
         0.0,
     )).collect();
 
-    let groups: Vec<Vec<Sattelite>> = orbits.iter().enumerate().map(|(group_i, orbit)| {
-        (0..NUM_SATS_PER_GROUP).map(|i| -> Sattelite {
+    let constellation = Constellation { groups: orbits.iter().enumerate().map(|(group_i, orbit)| {
+        let satellites = (0..NUM_SATS_PER_GROUP).map(|i| -> Sattelite {
             Sattelite {
                 id: SatelliteId {
                     group: group_i as u8,
@@ -48,8 +49,9 @@ async fn main() {
                     orbit.period() * TAU * group_i as f64 / (NUM_SATS_PER_GROUP.pow(2)) as f64
                 ) 
             }
-        }).collect()
-    }).collect();
+        }).collect();
+        SatelliteGroup { satellites }
+    }).collect() };
 
     const ORBIT_SAMPLES: u32 = 100;
 
@@ -94,7 +96,7 @@ async fn main() {
 
     let mut time_elapsed: f64 = 0.0;
     let mut ref_time = SystemTime::now();
-    let mut topology = Topology::new(&groups, time_elapsed, MIN_RANGE_METRES, MAX_RANGE_METRES);
+    let mut topology = constellation.topology(time_elapsed, MIN_RANGE_METRES, MAX_RANGE_METRES);
     let mut last_topology = time_elapsed;
     println!("Satellites without neighbors: {}",
         topology.neighbors.values().filter(|neighbors| neighbors.is_empty()).count());
@@ -114,8 +116,8 @@ async fn main() {
 
         window.draw_point(Vec3 { x: (1.2e7 / SCALE) as f32, y: 0.0, z: 0.0 }, RED, 8.0);
 
-        for group in &groups {
-            for sat in group {
+        for group in &constellation.groups {
+            for sat in &group.satellites {
                 let sat_pos = sat.position(time_elapsed) / SCALE;
                 window.draw_point(Vec3::new(sat_pos.x as f32, sat_pos.y as f32, sat_pos.z as f32), YELLOW, 4.0);
             }
@@ -132,7 +134,7 @@ async fn main() {
         ref_time = time_now;
 
         if time_elapsed - last_topology >= TOPOLOGY_INTERVAL_SEC {
-            topology = Topology::new(&groups, time_elapsed, MIN_RANGE_METRES, MAX_RANGE_METRES);
+            topology = constellation.topology(time_elapsed, MIN_RANGE_METRES, MAX_RANGE_METRES);
             last_topology = time_elapsed;
             println!("Satellites without neighbors: {}",
                 topology.neighbors.values().filter(|neighbors| neighbors.is_empty()).count());
