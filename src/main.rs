@@ -45,7 +45,7 @@ async fn main() {
                 orbit,
                 epoch: Epoch::new(
                     i as f64 / NUM_SATS_PER_GROUP as f64,
-                    orbit.period() * TAU * group_i as f64 / (NUM_SATS_PER_GROUP ^ 2) as f64
+                    orbit.period() * TAU * group_i as f64 / (NUM_SATS_PER_GROUP.pow(2)) as f64
                 ) 
             }
         }).collect()
