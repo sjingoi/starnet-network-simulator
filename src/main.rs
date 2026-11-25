@@ -1,14 +1,18 @@
 mod orbits;
+mod topology;
 mod utils;
 use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, RED, YELLOW}, glamx::{Quat, Vec3}, renderer::Polyline3d, scene::SceneNode3d, window::Window};
 use orbits::{Planet, Orbit};
 use std::{f64::consts::{PI, TAU}, path::Path, time::{SystemTime}};
 use glam::{DAffine3, DVec3};
 
-use crate::{orbits::{Epoch, SatelliteId, Sattelite}, utils::VecDVec3Ext};
+use crate::{orbits::{Epoch, SatelliteId, Sattelite}, topology::Topology, utils::VecDVec3Ext};
 
 const SCALE: f64 = 1e7;
 const TIME_SCALE: f64 = 1.0;
+const MAX_RANGE_METRES: f64 = 700_000.0;
+const MIN_RANGE_METRES: f64 = 10_000.0;
+const TOPOLOGY_INTERVAL_SEC: f64 = 10.0;
 
 #[kiss3d::main]
 async fn main() {
@@ -90,6 +94,13 @@ async fn main() {
 
     let mut time_elapsed: f64 = 0.0;
     let mut ref_time = SystemTime::now();
+    let mut topology = Topology::new(&groups, time_elapsed, MIN_RANGE_METRES, MAX_RANGE_METRES);
+    let mut last_topology = time_elapsed;
+    println!("Satellites without neighbors: {}",
+        topology.neighbors.values().filter(|neighbors| neighbors.is_empty()).count());
+    println!("Average neighbors per satellite: {:.2}",
+        topology.neighbors.values().map(Vec::len).sum::<usize>() as f64
+            / topology.neighbors.len().max(1) as f64);
 
     while window.render_3d(&mut scene, &mut camera).await {
         // Lines only last one frame, so redraw every frame.
@@ -119,6 +130,16 @@ async fn main() {
     
         time_elapsed +=  TIME_SCALE * time_delta;
         ref_time = time_now;
+
+        if time_elapsed - last_topology >= TOPOLOGY_INTERVAL_SEC {
+            topology = Topology::new(&groups, time_elapsed, MIN_RANGE_METRES, MAX_RANGE_METRES);
+            last_topology = time_elapsed;
+            println!("Satellites without neighbors: {}",
+                topology.neighbors.values().filter(|neighbors| neighbors.is_empty()).count());
+            println!("Average neighbors per satellite: {:.2}",
+                topology.neighbors.values().map(Vec::len).sum::<usize>() as f64
+                    / topology.neighbors.len().max(1) as f64);
+        }
 
         // Spin about the world Z (polar) axis: one full turn per sidereal day.
         // Wrap in f64 before casting so the angle keeps f32 precision over long runs.
