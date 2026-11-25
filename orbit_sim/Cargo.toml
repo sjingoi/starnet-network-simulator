@@ -1,8 +1,11 @@
 [package]
-name = "starnet-simulator"
+name = "orbit_sim"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 glam = "0.34.3"
 kiss3d = "0.47"
+
+[lib]
+crate-type = ["staticlib"]

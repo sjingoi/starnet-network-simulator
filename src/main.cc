@@ -4,10 +4,12 @@
 #include <ns3/network-module.h>
 #include <ns3/csma-module.h>
 #include <ns3/internet-apps-module.h>
+#include <orbit-sim.h>
 
 using namespace ns3;
 
 int main() {
+    start_visualizer();
     Time::SetResolution(ns3::Time::US);
 
     NodeContainer nodes;
