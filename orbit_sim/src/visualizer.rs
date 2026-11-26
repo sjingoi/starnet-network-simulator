@@ -1,7 +1,3 @@
-mod constellation;
-mod orbits;
-mod topology;
-mod utils;
 use kiss3d::{camera::OrbitCamera3d, color::{BLUE, GREEN, LIME_GREEN, RED, YELLOW}, glamx::{Quat, Vec3}, scene::SceneNode3d, window::Window};
 use std::{f64::consts::{PI, TAU}, path::Path, time::{SystemTime}};
 
@@ -13,8 +9,11 @@ const MAX_RANGE_METRES: f64 = 700_000.0;
 const MIN_RANGE_METRES: f64 = 400_000.0;
 const TOPOLOGY_INTERVAL_SEC: f64 = 10.0;
 
-#[kiss3d::main]
-async fn main() {
+pub fn visualize() {
+    kiss3d::pollster::block_on(visualize_async());
+}
+
+async fn visualize_async() {
 
     let earth = Planet {
         mass: 5.9722e24,
