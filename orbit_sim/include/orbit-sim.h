@@ -1,6 +1,7 @@
 #ifndef ORBIT_SIM_H
 #define ORBIT_SIM_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -20,6 +21,13 @@ double sim_latency_ms(Address source, Address target, double time_s);
 double sim_packet_loss(Address source, Address target, double time_s);
 
 Address next_hop(Address node, Address dest, double time_s);
+
+// Writes up to `capacity` node addresses into `out` and returns the total number of nodes.
+// Pass out = NULL to query the count first:
+//   size_t n = get_all_nodes(NULL, 0);
+//   Address *addrs = malloc(n * sizeof(Address));
+//   get_all_nodes(addrs, n);
+size_t get_all_nodes(Address *out, size_t capacity);
 
 #ifdef __cplusplus
 }

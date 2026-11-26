@@ -36,3 +36,20 @@ pub extern "C" fn next_hop(_node: Address, _dest: Address, _time_s: f64) -> Addr
 
     u32::from_be_bytes([0, 0, group, sat])
 }
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn get_all_nodes(out: *mut Address, capacity: usize) -> usize {
+    // Hardcoded stub: three nodes.
+    const ADDRESSES: [Address; 3] = [
+        u32::from_be_bytes([0, 0, 0, 0]),
+        u32::from_be_bytes([0, 0, 0, 1]),
+        u32::from_be_bytes([0, 0, 1, 0]),
+    ];
+
+    if !out.is_null() {
+        let n = capacity.min(ADDRESSES.len());
+        unsafe { std::ptr::copy_nonoverlapping(ADDRESSES.as_ptr(), out, n) };
+    }
+
+    ADDRESSES.len()
+}
