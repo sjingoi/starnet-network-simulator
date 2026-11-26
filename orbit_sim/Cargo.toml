@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 glam = "0.34.3"
 kiss3d = "0.47"
+rand = "0.10"
 
 [lib]
 crate-type = ["staticlib"]
