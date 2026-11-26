@@ -166,8 +166,8 @@ impl<'a> Orbit<'a> {
 
 #[derive(Debug)]
 pub struct Epoch {
-    mean_anomaly: f64, // Position in orbit
-    time_0: f64, // Time at which the object is at that position
+    pub(crate) mean_anomaly: f64, // Position in orbit
+    pub(crate) time_0: f64, // Time at which the object is at that position
 }
 
 impl Epoch {
@@ -176,23 +176,5 @@ impl Epoch {
             mean_anomaly: position * TAU,
             time_0: reference_time
         }
-    }
-}
-
-#[derive(Debug)]
-pub struct Sattelite<'a> {
-    pub orbit: &'a Orbit<'a>,
-    pub epoch: Epoch
-}
-
-impl<'a> Sattelite<'a> {
-    pub fn position(&self, time_sec: f64) -> DVec3 {
-        let sec_per_orbit: f64 = self.orbit.period();
-        let time_since_epoch_sec = time_sec - self.epoch.time_0;
-        let orbits = time_since_epoch_sec / sec_per_orbit;
-        let dist_since_epoch_rad = orbits * TAU;
-        let dist_since_t0_rad = dist_since_epoch_rad + self.epoch.mean_anomaly;
-        let mean_anomaly_pos = dist_since_t0_rad % TAU;
-        self.orbit.params.position(mean_anomaly_pos)
     }
 }
