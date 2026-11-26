@@ -10,6 +10,8 @@ git clone --depth=1 --branch "$NS3_VERSION" https://gitlab.com/nsnam/ns-3-dev.gi
 cmake -S "$SRC" -B "$SRC/cmake-build" -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX="$PREFIX" \
-  -DNS3_EXAMPLES=OFF -DNS3_TESTS=OFF
+  -DNS3_EXAMPLES=OFF \
+  -DNS3_TESTS=OFF \
+  -DNS3_WARNINGS_AS_ERRORS=OFF
 cmake --build "$SRC/cmake-build"
 cmake --install "$SRC/cmake-build"
