@@ -18,16 +18,21 @@ pub extern "C" fn set_visualizer_time(_time_s: f64) {
     // running the simulation the way it already does.
 }
 
+/// One-way latency (ms) of the direct link from `source` to `target` at `time_s` (seconds).
+/// The two nodes must be neighbours.
 #[unsafe(no_mangle)]
 pub extern "C" fn sim_latency_ms(_source: Address, _target: Address, _time_s: f64) -> f64 {
     0.0 // 0ms
 }
 
+/// Packet loss of the direct link from `source` to `target` at `time_s` (seconds),
+/// as a fraction from 0.0 (no loss) to 1.0 (all lost). The two nodes must be neighbours.
 #[unsafe(no_mangle)]
 pub extern "C" fn sim_packet_loss(_source: Address, _target: Address, _time_s: f64) -> f64 {
-    0.0 // 0%
+    0.0 // no loss
 }
 
+/// Returns the neighbour of `node` that a packet headed for `dest` should be forwarded to at `time_s` (seconds).
 #[unsafe(no_mangle)]
 pub extern "C" fn next_hop(_node: Address, _dest: Address, _time_s: f64) -> Address {
     // Forward to a random node
