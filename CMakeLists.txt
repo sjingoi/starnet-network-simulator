@@ -25,7 +25,7 @@ find_package(ns3 CONFIG REQUIRED COMPONENTS
     internet-apps
 )
 
-add_executable(sim src/main.cc)
+add_executable(sim src/main.cc src/ipv4-sat-routing.cc)
 
 target_include_directories(sim PRIVATE orbit_sim/include)
 
