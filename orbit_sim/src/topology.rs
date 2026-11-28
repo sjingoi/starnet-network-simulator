@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use glam::DVec3;
 
-use crate::constellation::{Constellation, SatelliteId};
+use crate::constellation::{Address, Constellation};
 
 pub struct Topology {
-    pub neighbors: HashMap<SatelliteId, Vec<SatelliteId>>,
+    pub neighbors: HashMap<Address, Vec<Address>>,
 }
 
 impl Topology {
@@ -15,7 +15,7 @@ impl Topology {
             .iter()
             .flat_map(|group| {
                 group.satellites.iter().map(move |satellite| {
-                    (satellite.id, satellite.position(&group.orbit, time_sec))
+                    (satellite.address, satellite.position(&group.orbit, time_sec))
                 })
             })
             .collect();
@@ -23,7 +23,7 @@ impl Topology {
         let mut lines = Vec::new();
         for (&from, neighbors) in &self.neighbors {
             for &to in neighbors {
-                if (from.group, from.index) < (to.group, to.index) {
+                if from < to {
                     lines.push((positions[&from], positions[&to]));
                 }
             }

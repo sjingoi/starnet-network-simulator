@@ -16,15 +16,11 @@ const ORBIT_ALT_METRES: f64 = 400_000.0;
 const ORBIT_INCL_RAD: f64 = 53.25 * PI / 180.0;
 const ORBIT_SAMPLES: u32 = 100;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SatelliteId {
-    pub group: u8,
-    pub index: u8,
-}
+pub type Address = u32;
 
 #[derive(Debug)]
 pub struct Sattelite {
-    pub id: SatelliteId,
+    pub address: Address,
     pub epoch: Epoch,
 }
 
@@ -65,7 +61,7 @@ impl<'a> Constellation<'a> {
                 );
                 let satellites = (0..sats_per_group)
                     .map(|i| Sattelite {
-                        id: SatelliteId { group, index: i },
+                        address: u32::from_be_bytes([0, 0, group, i]), 
                         epoch: Epoch::new(
                             i as f64 / sats_per_group as f64,
                             orbit.period() * TAU * group as f64 / (sats_per_group as f64).powi(2),
@@ -100,18 +96,18 @@ impl<'a> Constellation<'a> {
     }
 
     pub fn topology(&self, time: f64, min_range: f64, max_range: f64) -> Topology {
-        let satellites: Vec<(SatelliteId, DVec3)> = self
+        let satellites: Vec<(Address, DVec3)> = self
             .groups
             .iter()
             .flat_map(|group| {
                 group
                     .satellites
                     .iter()
-                    .map(move |satellite| (satellite.id, satellite.position(&group.orbit, time)))
+                    .map(move |satellite| (satellite.address, satellite.position(&group.orbit, time)))
             })
             .collect();
-        let mut neighbors: HashMap<SatelliteId, Vec<SatelliteId>> =
-            satellites.iter().map(|(id, _)| (*id, Vec::new())).collect();
+        let mut neighbors: HashMap<Address, Vec<Address>> =
+            satellites.iter().map(|(address, _)| (*address, Vec::new())).collect();
 
         let min_range_sqr = min_range.powi(2);
         let max_range_sqr = max_range.powi(2);

@@ -8,6 +8,8 @@ const TIME_SCALE: f64 = 1.0;
 const MAX_RANGE_METRES: f64 = 700_000.0;
 const MIN_RANGE_METRES: f64 = 400_000.0;
 const TOPOLOGY_INTERVAL_SEC: f64 = 10.0;
+pub const NUM_GROUPS: u8 = 32;
+pub const NUM_SAT_PER_GROUP: u8 = 64;
 
 pub fn visualize() {
     kiss3d::pollster::block_on(visualize_async());
@@ -21,7 +23,7 @@ async fn visualize_async() {
         sr_day: 8.6164091e4,
     };
 
-    let constellation = Constellation::new(&earth, 32, 64);
+    let constellation = Constellation::new(&earth, NUM_GROUPS, NUM_SAT_PER_GROUP);
     let ellipses = constellation.render_ellipses(SCALE);
 
     // Plot
